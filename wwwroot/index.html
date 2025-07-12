@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Voting System</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+      color: #f1f1f1;
+    }
+    header {
+      background-color: #1a1a2e;
+      padding: 1rem;
+      text-align: center;
+      font-size: 1.8rem;
+      color: #00f5d4;
+      font-weight: bold;
+      box-shadow: 0 2px 5px #000;
+    }
+    nav {
+      display: flex;
+      justify-content: center;
+      background-color: #16213e;
+      padding: 0.5rem;
+      flex-wrap: wrap;
+    }
+    nav button {
+      background-color: #0f3460;
+      color: white;
+      border: none;
+      padding: 0.4rem 0.9rem;
+      margin: 0.3rem;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: background 0.3s;
+    }
+    nav button:hover {
+      background-color: #00f5d4;
+      color: #000;
+    }
+    section {
+      max-width: 700px;
+      margin: 2rem auto;
+      background-color: #1a1a2e;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 0 15px #000;
+    }
+    h2 {
+      color: #00f5d4;
+      margin-top: 0;
+    }
+    label {
+      display: block;
+      margin: 1rem 0 0.2rem;
+    }
+    input, select {
+      width: 100%;
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      border: none;
+      border-radius: 5px;
+    }
+    button.submit {
+      background-color: #00f5d4;
+      color: #000;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button.submit:hover {
+      background-color: #00c8a5;
+    }
+    .message {
+      margin-top: 1rem;
+      padding: 0.8rem;
+      border-radius: 5px;
+      font-weight: bold;
+    }
+    .success {
+      background-color: #2ecc71;
+      color: #000;
+    }
+    .error {
+      background-color: #e74c3c;
+      color: #fff;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      padding: 0.3rem 0;
+    }
+    .card {
+      background: #0f3460;
+      border-radius: 5px;
+      padding: 0.5rem 1rem;
+      margin-bottom: 0.5rem;
+    }
+    .card.winner {
+      background: #00f5d4;
+      color: black;
+      font-weight: bold;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <header>🎉 Welcome to the Election Portal</header>
+  <nav id="navBar">
+    <button onclick="scrollToSection('login')" id="loginNav">Login</button>
+    <button onclick="scrollToSection('register')" id="registerNav">Register</button>
+    <button onclick="scrollToSection('apply')" class="hidden" id="applyNav">Apply</button>
+    <button onclick="scrollToSection('vote')" class="hidden" id="voteNav">Vote</button>
+    <button onclick="scrollToSection('results')" class="hidden" id="resultsNav">Results</button>
+    <button onclick="logout()" class="hidden" id="logoutBtn">Logout</button>
+  </nav>
+
+  <section id="login">
+    <h2>🔐 Login</h2>
+    <label>Email</label>
+    <input id="loginEmail" type="email" />
+    <label>Password</label>
+    <input id="loginPassword" type="password" />
+    <button class="submit" onclick="login()">Login</button>
+    <div id="loginMsg" class="message"></div>
+  </section>
+
+  <section id="register">
+    <h2>📝 Register</h2>
+    <label>Name</label>
+    <input id="regName" type="text" />
+    <label>Email</label>
+    <input id="regEmail" type="email" />
+    <label>Password</label>
+    <input id="regPassword" type="password" />
+    <button class="submit" onclick="register()">Register</button>
+    <div id="regMsg" class="message"></div>
+  </section>
+
+  <section id="apply" class="hidden">
+    <h2>🎯 Apply as Candidate</h2>
+    <label>Select Election</label>
+    <select id="applyElection"></select>
+    <button class="submit" onclick="applyCandidate()">Apply</button>
+    <div id="applyMsg" class="message"></div>
+  </section>
+
+  <section id="vote" class="hidden">
+    <h2>🗳️ Vote</h2>
+    <label>Select Election</label>
+    <select id="voteElection" onchange="loadCandidates()"></select>
+    <label>Select Candidate</label>
+    <select id="voteCandidate"></select>
+    <button class="submit" onclick="submitVote()">Submit Vote</button>
+    <div id="voteMsg" class="message"></div>
+  </section>
+
+  <section id="results" class="hidden">
+    <h2>📊 Election Results</h2>
+    <label>Select Election:</label>
+    <select id="resultsElectionSelect"></select>
+    <button onclick="loadResults()" class="submit">Show Results</button>
+    <div id="resultsList"></div>
+  </section>
+
+  <script>
+    let currentUser = null;
+
+    function updateUI() {
+      const loggedIn = !!currentUser;
+      document.getElementById('login').classList.toggle('hidden', loggedIn);
+      document.getElementById('register').classList.toggle('hidden', loggedIn);
+      document.getElementById('apply').classList.toggle('hidden', !loggedIn);
+      document.getElementById('vote').classList.toggle('hidden', !loggedIn);
+      document.getElementById('results').classList.toggle('hidden', !loggedIn);
+      document.getElementById('applyNav').classList.toggle('hidden', !loggedIn);
+      document.getElementById('voteNav').classList.toggle('hidden', !loggedIn);
+      document.getElementById('resultsNav').classList.toggle('hidden', !loggedIn);
+      document.getElementById('logoutBtn').classList.toggle('hidden', !loggedIn);
+      document.getElementById('loginNav').classList.toggle('hidden', loggedIn);
+      document.getElementById('registerNav').classList.toggle('hidden', loggedIn);
+    }
+
+    async function fetchElections(id) {
+      const res = await fetch('/api/elections');
+      const data = await res.json();
+      const select = document.getElementById(id);
+      select.innerHTML = data.map(e => `<option value="${e.id}">${e.title}</option>`).join('');
+    }
+
+    async function login() {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: loginEmail.value, password: loginPassword.value })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        currentUser = data;
+        loginMsg.textContent = `Welcome ${data.name}!`;
+        loginMsg.className = 'message success';
+        fetchElections('applyElection');
+        fetchElections('voteElection');
+        fetchElections('resultsElectionSelect');
+        updateUI();
+      } else {
+        loginMsg.textContent = 'Login failed';
+        loginMsg.className = 'message error';
+      }
+    }
+
+    async function register() {
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: regName.value, email: regEmail.value, password: regPassword.value })
+      });
+      const text = await res.text();
+      regMsg.textContent = text;
+      regMsg.className = text.includes('success') ? 'message success' : 'message error';
+    }
+
+    async function applyCandidate() {
+      if (!currentUser) return;
+      const res = await fetch('/api/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: currentUser.id, electionId: applyElection.value })
+      });
+      const text = await res.text();
+      applyMsg.textContent = text;
+      applyMsg.className = text.includes('submitted') ? 'message success' : 'message error';
+    }
+
+    async function loadCandidates() {
+      const res = await fetch(`/api/candidates/${voteElection.value}`);
+      const data = await res.json();
+      voteCandidate.innerHTML = data.map(c => `<option value="${c.id}">${c.candidateName}</option>`).join('');
+    }
+
+    async function submitVote() {
+      if (!currentUser) return;
+      const res = await fetch('/api/vote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          voterId: currentUser.id,
+          candidateId: voteCandidate.value,
+          electionId: voteElection.value
+        })
+      });
+      const text = await res.text();
+      voteMsg.textContent = text;
+      voteMsg.className = text.includes('successfully') ? 'message success' : 'message error';
+    }
+
+    async function loadResults() {
+      const electionId = document.getElementById('resultsElectionSelect').value;
+      const res = await fetch(`/api/candidates/${electionId}`);
+      const candidates = await res.json();
+
+      const results = await Promise.all(candidates.map(async c => {
+        const countRes = await fetch(`/api/votes/count?electionId=${electionId}&candidateId=${c.id}`);
+        const count = await countRes.json();
+        return { ...c, votes: count };
+      }));
+
+      const maxVotes = Math.max(...results.map(r => r.votes));
+      document.getElementById('resultsList').innerHTML = results.map(c => `
+        <div class="card ${c.votes === maxVotes ? 'winner' : ''}">
+          <strong>${c.candidateName}</strong><br>Votes: ${c.votes}
+        </div>`).join('');
+    }
+
+    function scrollToSection(id) {
+      document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function logout() {
+      currentUser = null;
+      updateUI();
+    }
+  </script>
+</body>
+</html>

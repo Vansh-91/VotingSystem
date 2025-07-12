@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Vote for a Candidate</title>
+  <style>
+    body {
+      background-color: #0d1117;
+      color: #c9d1d9;
+      font-family: Arial, sans-serif;
+      padding: 0;
+      margin: 0;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 30px auto;
+      background: #161b22;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,123,255,0.4);
+    }
+
+    h2, h3 {
+      color: #58a6ff;
+      text-align: center;
+    }
+
+    .election, .candidate {
+      background: #21262d;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 8px;
+    }
+
+    button {
+      padding: 10px;
+      background-color: #238636;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #2ea043;
+    }
+
+    select, input {
+      width: 100%;
+      padding: 12px;
+      margin-top: 12px;
+      background: #0d1117;
+      color: white;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+    }
+
+    .message {
+      text-align: center;
+      font-weight: bold;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Vote in Election</h2>
+
+    <label for="userId">Your User ID:</label>
+    <input type="number" id="userId" placeholder="Enter your User ID" required />
+
+    <label for="electionSelect">Select Election:</label>
+    <select id="electionSelect">
+      <option value="">-- Select an Election --</option>
+    </select>
+
+    <div id="candidateList"></div>
+
+    <div class="message" id="messageBox"></div>
+  </div>
+
+  <script>
+    const electionSelect = document.getElementById("electionSelect");
+    const candidateList = document.getElementById("candidateList");
+    const messageBox = document.getElementById("messageBox");
+
+    // Load all elections
+    async function loadElections() {
+      const res = await fetch("/api/elections");
+      const elections = await res.json();
+
+      for (let e of elections) {
+        const option = document.createElement("option");
+        option.value = e.id;
+        option.textContent = e.title;
+        electionSelect.appendChild(option);
+      }
+    }
+
+    // Load candidates for selected election
+    electionSelect.addEventListener("change", async () => {
+      const electionId = electionSelect.value;
+      candidateList.innerHTML = "";
+      messageBox.textContent = "";
+
+      if (!electionId) return;
+
+      const res = await fetch(`/api/candidates/${electionId}`);
+      const candidates = await res.json();
+
+      if (candidates.length === 0) {
+        candidateList.innerHTML = "<p>No candidates available for this election.</p>";
+        return;
+      }
+
+      candidates.forEach(c => {
+        const div = document.createElement("div");
+        div.className = "candidate";
+        div.innerHTML = `
+          <h3>${c.candidateName}</h3>
+          <button onclick="vote(${c.id}, ${electionId})">Vote</button>
+        `;
+        candidateList.appendChild(div);
+      });
+    });
+
+    // Submit vote
+    async function vote(candidateId, electionId) {
+      const voterId = document.getElementById("userId").value;
+      if (!voterId) {
+        messageBox.textContent = "Please enter your user ID.";
+        messageBox.style.color = "orange";
+        return;
+      }
+
+      const res = await fetch("/api/vote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          voterId: parseInt(voterId),
+          candidateId,
+          electionId
+        })
+      });
+
+      const msg = await res.text();
+      messageBox.textContent = msg;
+      messageBox.style.color = res.ok ? "lightgreen" : "red";
+    }
+
+    loadElections();
+  </script>
+</body>
+</html>

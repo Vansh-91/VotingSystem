@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Apply as Candidate</title>
+  <style>
+    body {
+      background-color: #0d1117;
+      color: #c9d1d9;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      background-color: #161b22;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0, 123, 255, 0.3);
+    }
+
+    h2 {
+      text-align: center;
+      color: #58a6ff;
+      margin-bottom: 10px;
+    }
+
+    .election {
+      background-color: #21262d;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+    }
+
+    .election h3 {
+      margin: 0;
+      color: #58a6ff;
+    }
+
+    .election p {
+      margin: 5px 0;
+      font-size: 14px;
+    }
+
+    .election button {
+      margin-top: 10px;
+      background-color: #1f6feb;
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      font-size: 14px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .election button:hover {
+      background-color: #388bfd;
+    }
+
+    form {
+      margin-top: 25px;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 12px;
+      margin: 12px 0;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+
+    input {
+      background-color: #0d1117;
+      color: #fff;
+      border: 1px solid #30363d;
+    }
+
+    button[type="submit"] {
+      background-color: #238636;
+      color: white;
+      cursor: pointer;
+    }
+
+    button[type="submit"]:hover {
+      background-color: #2ea043;
+    }
+
+    .message {
+      margin-top: 10px;
+      text-align: center;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Available Elections</h2>
+    <div id="electionList"></div>
+
+    <h2>Apply as Candidate</h2>
+    <form id="applyForm">
+      <input type="number" id="userId" placeholder="Your User ID" required />
+      <input type="number" id="electionId" placeholder="Election ID" required readonly />
+      <button type="submit">Apply</button>
+    </form>
+    <div class="message" id="messageBox"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById('applyForm');
+    const msg = document.getElementById('messageBox');
+    const electionList = document.getElementById('electionList');
+
+    // ✅ Fetch and show all elections
+    async function loadElections() {
+      try {
+        const res = await fetch('/api/elections');
+        if (!res.ok) throw new Error("Failed to fetch elections");
+        const elections = await res.json();
+
+        if (elections.length === 0) {
+          electionList.innerHTML = "<p>No elections available currently.</p>";
+          return;
+        }
+
+        electionList.innerHTML = elections.map(e => `
+          <div class="election">
+            <h3>${e.title}</h3>
+            <p>${e.description}</p>
+            <p><strong>Start:</strong> ${e.startDate.split('T')[0]} &nbsp; <strong>End:</strong> ${e.endDate.split('T')[0]}</p>
+            <button onclick="selectElection(${e.id})">Apply for This</button>
+          </div>
+        `).join('');
+      } catch (error) {
+        electionList.innerHTML = "<p style='color: red;'>Error loading elections.</p>";
+      }
+    }
+
+    // ✅ Select election and autofill input
+    function selectElection(id) {
+      document.getElementById('electionId').value = id;
+      msg.textContent = `Selected Election ID: ${id}`;
+      msg.style.color = '#58a6ff';
+    }
+
+    // ✅ Handle form submit
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const userId = document.getElementById('userId').value;
+      const electionId = document.getElementById('electionId').value;
+
+      const res = await fetch('/api/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, electionId })
+      });
+
+      const data = await res.text();
+      msg.textContent = data;
+      msg.style.color = res.ok ? 'lightgreen' : 'red';
+    });
+
+    // Load list on page load
+    loadElections();
+  </script>
+</body>
+</html>

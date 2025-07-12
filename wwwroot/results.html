@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Election Results</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      background-color: #0d1117;
+      color: #c9d1d9;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    h1, h2 {
+      color: #58a6ff;
+    }
+    select, button {
+      padding: 10px;
+      margin: 10px 0;
+      background-color: #161b22;
+      color: white;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+    }
+    button:hover {
+      background-color: #238636;
+      cursor: pointer;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>📊 Election Results</h1>
+
+  <h2>Select an Election</h2>
+  <select id="electionSelect"></select>
+  <button onclick="fetchResults()">View Results</button>
+
+  <div class="result" id="resultsBox"></div>
+
+  <script>
+    const electionSelect = document.getElementById("electionSelect");
+    const resultsBox = document.getElementById("resultsBox");
+
+    async function loadElections() {
+      const res = await fetch("/api/elections");
+      const elections = await res.json();
+      electionSelect.innerHTML = elections.map(e =>
+        `<option value="${e.id}">${e.title}</option>`
+      ).join("");
+    }
+
+    async function fetchResults() {
+      const electionId = electionSelect.value;
+      const res = await fetch(`/api/results/${electionId}`);
+      const results = await res.json();
+
+      resultsBox.innerHTML = `<strong>Results:</strong><br>` +
+        results.map(r =>
+          `${r.candidateName}: ${r.voteCount} vote(s)`
+        ).join("<br>");
+    }
+
+    loadElections();
+  </script>
+</body>
+</html>
